@@ -1,0 +1,11 @@
+env/
+
+src/__pycache__/
+src/common/__pycache__/
+
+src/robots/__pycache__/
+src/robots/whatsapp_web/__pycache__/
+
+src/robots/punto_red/__pycache__/
+src/robots/punto_red/archivos_punto_red/*
+!src/robots/punto_red/archivos_punto_red/.gitkeep
