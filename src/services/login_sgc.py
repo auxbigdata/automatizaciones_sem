@@ -28,3 +28,12 @@ def iniciar_sesion_sgc(page, URL, URL_HOME, PASS, USER):
     except Exception as e:
         # logging.error(f"Ocurrio un error al iniciar sesión es superflex: {e}")
         print(f"Ocurrio un error al iniciar sesión en sgc: {e}")
+
+page = open_browser()
+
+
+URL = "http://10.1.1.4/consuerteinventarios"
+URL_HOME = "http://10.1.1.4/consuerteinventarios/start.php"
+USER = "CP1029980182"
+PASS = "123"
+iniciar_sesion_sgc(page, URL, URL_HOME, PASS, USER)

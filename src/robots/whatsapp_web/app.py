@@ -1,7 +1,7 @@
-from src.common.whatsapp_web import abrir_whatsapp_con_perfil, cerrar_navegador
-from src.common.whatsapp_web import buscar_chats, ingresar_menu_comunidades, click_chat, enviar_imagen
+from src.services.whatsapp_web import abrir_whatsapp_con_perfil, cerrar_navegador
+from src.services.whatsapp_web import buscar_chats, ingresar_menu_comunidades, click_chat, enviar_imagen
 from src.robots.whatsapp_web.validar_imagen import buscar_imagen
-from src.common.open_browser_context import open_browser_context
+from src.services.open_browser_context import open_browser_context
 
 # nombre_grupo = "RESULTADOS COLOMBIA"
 # # "Resultados ConSuerte Acac",

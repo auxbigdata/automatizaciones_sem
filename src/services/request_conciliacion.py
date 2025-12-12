@@ -1,8 +1,7 @@
 # import requests
 import requests
 
-def request_conciliacion(data, ruta_archivo: str, nombre_archivo: str, URL_UPLOAD):
-
+def request_conciliacion(data, ruta_archivo: str, nombre_archivo: str, URL_UPLOAD, log):
     data = {
         "usuario": "CP1029980182",
         "tiemposesion": "1763499600887",
@@ -20,7 +19,7 @@ def request_conciliacion(data, ruta_archivo: str, nombre_archivo: str, URL_UPLOA
     }
     # 4. Archivo a subir
     # ruta = "C:/automatizaciones_sem/src/robots/punto_red/archivos_punto_red/RCONL_090_251118.txt"
-    print("en la funcion request_conciliacion")
+    log.info("en la funcion request_conciliacion")
     session = requests.Session()
 
     with open(ruta_archivo, "rb") as f:
@@ -29,8 +28,7 @@ def request_conciliacion(data, ruta_archivo: str, nombre_archivo: str, URL_UPLOA
         }
 
         response = session.post(URL_UPLOAD, data=data, files=files)
-
-    print("STATUS:", response.status_code)
-    print("RESPUESTA:")
-    print(response.text)
+    # log.info(f"STATUS: {response.status_code}")
+    # log.info("RESPUESTA:")
+    # log.info(response.text)
     return response

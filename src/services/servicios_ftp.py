@@ -12,13 +12,14 @@ import os
 archivos = []
 
 
-def conectar_ftp(host: str, puerto: int, user: str, passwd: str):
-    """Establece y retorna una conexiÃƒÆ’Ã‚Â³n FTP lista para usar."""
+def conectar_ftp(host: str, puerto: int, user: str, passwd: str, log):
+    """Establece y retorna una conexiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n FTP lista para usar."""
     ftp = FTP()
     ftp.connect(host, puerto)
     ftp.login(user=user, passwd=passwd)
     ftp.set_pasv(True)
-    print("Conectado exitosamente al FTP")
+    log.info("Conectado exitosamente al FTP")
+    # print("Conectado exitosamente al FTP")
     return ftp
 
 def obtener_archivos_txt(ftp: FTP):
@@ -36,19 +37,19 @@ def obtener_archivos_txt(ftp: FTP):
     return archivos
 
 
-def obtener_nombre_archivo():
+def obtener_nombre_archivo(log):
     dia_actual = datetime.now().strftime('%d')
     mes_actual = datetime.now().strftime('%m')
     anio_actual = datetime.now().strftime('%y')
 
     nombre_archivo = f"RCONL_090_{anio_actual}{mes_actual}{dia_actual}.txt"
-    print(dia_actual, mes_actual, anio_actual)
-    print("Nombre del archivo a buscar:", nombre_archivo)
+    # print(dia_actual, mes_actual, anio_actual)
+    log.info(f"Nombre del archivo a buscar: {nombre_archivo}")
     # datetime.now().strftime('%y')
     return nombre_archivo
 
 
-def descargar_archivo(ftp: FTP, nombre_archivo: str, ruta_descarga: str) -> bool:
+def descargar_archivo(ftp: FTP, nombre_archivo: str, ruta_descarga: str, log) -> bool:
     """Busca y descarga el archivo especificado. Retorna True si lo logra."""
     
     archivos = obtener_archivos_txt(ftp)
@@ -57,19 +58,18 @@ def descargar_archivo(ftp: FTP, nombre_archivo: str, ruta_descarga: str) -> bool
     os.makedirs(ruta_descarga, exist_ok=True)
     ruta_archivo = os.path.join(ruta_descarga, nombre_archivo)
 
-    print("ÃƒÆ’Ã…Â¡ltimos 10 archivos:")
+    log.info("ultimos 10 archivos:")
     for fecha, nombre in ultimos_10:
-        print(f"{fecha} -> {nombre}")
+        log.info(f"{fecha} -> {nombre}")
         if nombre == nombre_archivo:
-            print(f"Archivo encontrado: {nombre}")
-
+            log.info(f"Archivo encontrado: {nombre}")
 
             with open(ruta_archivo, 'wb') as f:
                 ftp.retrbinary(f"RETR {nombre}", f.write)
-            print(f"Archivo {nombre} descargado correctamente.")
+            log.info(f"Archivo {nombre} descargado correctamente.")
             return True, ruta_archivo
 
-    print("El archivo no se encontrÃƒÆ’Ã‚Â³ en los ÃƒÆ’Ã‚Âºltimos 10 registros.")
+    log.error("El archivo no se encontró en los ultimos 10 registros.")
     return False, None
 
 
@@ -80,7 +80,7 @@ def descargar_archivo(ftp: FTP, nombre_archivo: str, ruta_descarga: str) -> bool
 # for fecha, nombre in ultimos_10:
 #     print(f"{fecha} -> {nombre}")
 #     if nombre == nombre_archivo:
-#         print(f"ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Archivo encontrado: {nombre}")
+#         print(f"ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Archivo encontrado: {nombre}")
 #         with open(nombre, 'wb') as f:
 #             ftp.retrbinary(f'RETR {nombre}', f.write)
 #             print(f"Archivo {nombre} descargado exitosamente.")

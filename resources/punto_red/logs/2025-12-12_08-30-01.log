@@ -1,0 +1,27 @@
+[2025-12-12 08:30:02] [INFO] Conectado exitosamente al FTP
+[2025-12-12 08:30:02] [INFO] Hola
+[2025-12-12 08:30:02] [INFO] Nombre del archivo a buscar: RCONL_090_251212.txt
+[2025-12-12 08:30:02] [INFO] ultimos 10 archivos:
+[2025-12-12 08:30:02] [INFO] Dec 04 01:00 -> RCONL_090_251204.txt
+[2025-12-12 08:30:02] [INFO] Dec 05 01:00 -> RCONL_090_251205.txt
+[2025-12-12 08:30:02] [INFO] Dec 06 01:00 -> RCONL_090_251206.txt
+[2025-12-12 08:30:02] [INFO] Dec 07 01:00 -> RCONL_090_251207.txt
+[2025-12-12 08:30:02] [INFO] Dec 08 01:00 -> RCONL_090_251208.txt
+[2025-12-12 08:30:02] [INFO] Dec 09 01:00 -> RCONL_090_251209.txt
+[2025-12-12 08:30:02] [INFO] Dec 10 01:00 -> RCONL_090_251210.txt
+[2025-12-12 08:30:02] [INFO] Dec 11 01:00 -> RCONL_090_251211.txt
+[2025-12-12 08:30:02] [INFO] Dec 12 01:00 -> RCONL_090_251212.txt
+[2025-12-12 08:30:02] [INFO] Archivo encontrado: RCONL_090_251212.txt
+[2025-12-12 08:30:03] [INFO] Archivo RCONL_090_251212.txt descargado correctamente.
+[2025-12-12 08:30:03] [INFO] Archivo descargado exitosamente.
+[2025-12-12 08:30:03] [INFO] /home/ubuntu/python/automatizaciones_sem/resources/punto_red/archivos/RCONL_090_251212.txt
+[2025-12-12 08:30:03] [INFO] http://10.1.1.11/consuertepruebas/upload.php
+[2025-12-12 08:30:03] [INFO] en la funcion request_conciliacion
+[2025-12-12 08:30:07] [INFO] RESPUESTA DE LA PETICION: COPY 180
+<br>
+
+<script language="javascript" type="text/javascript">
+	window.top.window.stopUpload(1, 'EL Número de Registros Insertados a punto red Es: 180 Registros Reales: 179', '/www/php56/consuertepruebas/emsa/log_subirfacturacion_2025-12-12_08_30_03.log', '179');
+</script>
+[2025-12-12 08:30:07] [INFO] STATUS_CODE: 200
+[2025-12-12 08:30:07] [INFO] EL Número de Registros Insertados a punto red Es: 180 Registros Reales: 179
