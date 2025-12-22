@@ -1,17 +1,20 @@
-URL = "http://10.1.1.11/consuertepruebas"
 import logging
 import os
 from datetime import datetime
-
+from src.settings.paths import robot_archivos
 # Carpeta raíz del proyecto
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+def parametrizar_logs_y_ruta_archivos(robot_name: str):
+    log = get_logger(robot_name)
+    ruta_descarga = robot_archivos(robot_name)
+    return log, ruta_descarga
 
 def get_logger(robot_name: str):
     # Crea un logger para un robot específico.
     # Cada ejecución genera un archivo .log con fecha y hora.
     
-
     # Carpeta donde se guardarán los logs del robot
     LOGS_DIR = os.path.join(BASE_DIR, "resources", robot_name, "logs")
     os.makedirs(LOGS_DIR, exist_ok=True)

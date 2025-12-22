@@ -1,11 +1,22 @@
 env/
 
-src/__pycache__/
-src/common/__pycache__/
+# LOGS Y ARCHIVOS DESCARGADOS
+# PUNTO RED
+resources/punto_red/archivos/*
+!resources/punto_red/archivos/.gitkeep
 
-src/robots/__pycache__/
-src/robots/whatsapp_web/__pycache__/
+resources/punto_red/logs/*
+!resources/punto_red/logs/.gitkeep
 
-src/robots/punto_red/__pycache__/
-src/robots/punto_red/archivos_punto_red/*
-!src/robots/punto_red/archivos_punto_red/.gitkeep
+# BANCO BOGOTA
+resources/banco_bogota/archivos/*
+!resources/banco_bogota/archivos/.gitkeep
+
+resources/banco_bogota/logs/*
+!resources/banco_bogota/logs/.gitkeep
+
+# __PYCHACHE__
+src/services/__pycache__
+src/__pycache__
+src/robots/__pycache__
+src/settings/__pycache__

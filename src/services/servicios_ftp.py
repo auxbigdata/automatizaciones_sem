@@ -1,26 +1,40 @@
-from ftplib import FTP
-from ftplib import FTP
+from ftplib import FTP, error_perm, error_temp
+import socket
 from datetime import datetime
 import os
-# ftp = FTP()
-# ftp.connect('10.8.0.23', 2121)
-# ftp.login(user='traeconsuerte', passwd='800159687')
-# ftp.set_pasv(True)
 
-# print("Conectado exitosamente")
-# 
 archivos = []
 
-
-def conectar_ftp(host: str, puerto: int, user: str, passwd: str, log):
-    """Establece y retorna una conexiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n FTP lista para usar."""
+def conectar_ftp(host: str, puerto: int, user: str, passwd: str):
+    """
+    Establece y retorna una conexión FTP lista para usar.
+    """
     ftp = FTP()
-    ftp.connect(host, puerto)
-    ftp.login(user=user, passwd=passwd)
-    ftp.set_pasv(True)
-    log.info("Conectado exitosamente al FTP")
-    # print("Conectado exitosamente al FTP")
-    return ftp
+    mensaje_conexion = ""
+    try:
+        ftp.connect(host, puerto, timeout=30)
+        ftp.login(user=user, passwd=passwd)
+        ftp.set_pasv(True)
+
+        return ftp, f"Conectado exitosamente al FTP {host}:{puerto}"
+    except error_perm as e:
+        # Errores permanentes (credenciales, permisos)
+        mensaje_conexion = f"Error de autenticación(credenciales) FTP: {e}"
+    except error_temp as e:
+        # Errores temporales del servidor
+        mensaje_conexion = f"Error temporal del servidor FTP: {e}"
+    except socket.timeout:
+        mensaje_conexion = f"Timeout al conectar al servidor FTP"
+    except socket.gaierror:
+        mensaje_conexion = f"No se pudo resolver el host FTP"
+    except Exception as e:
+        mensaje_conexion = f"Error inesperado al conectar al FTP {e}"
+    # Si algo falló
+    try:
+        ftp.quit()
+    except Exception:
+        pass
+    return None, mensaje_conexion
 
 def obtener_archivos_txt(ftp: FTP):
     """Retorna una lista de archivos .txt con su fecha desde el FTP."""
@@ -36,55 +50,35 @@ def obtener_archivos_txt(ftp: FTP):
     ftp.retrlines("LIST", parser)
     return archivos
 
-
-def obtener_nombre_archivo(log):
+def obtener_nombre_archivo():
     dia_actual = datetime.now().strftime('%d')
     mes_actual = datetime.now().strftime('%m')
     anio_actual = datetime.now().strftime('%y')
 
     nombre_archivo = f"RCONL_090_{anio_actual}{mes_actual}{dia_actual}.txt"
-    # print(dia_actual, mes_actual, anio_actual)
-    log.info(f"Nombre del archivo a buscar: {nombre_archivo}")
-    # datetime.now().strftime('%y')
     return nombre_archivo
 
-
 def descargar_archivo(ftp: FTP, nombre_archivo: str, ruta_descarga: str, log) -> bool:
-    """Busca y descarga el archivo especificado. Retorna True si lo logra."""
+    """Busca y descarga el archivo especificado en el ftp. Retorna True si lo logra."""
     
     archivos = obtener_archivos_txt(ftp)
-    ultimos_10 = archivos[-10:]
+    ultimos_5 = archivos[-5:]
 
     os.makedirs(ruta_descarga, exist_ok=True)
     ruta_archivo = os.path.join(ruta_descarga, nombre_archivo)
 
-    log.info("ultimos 10 archivos:")
-    for fecha, nombre in ultimos_10:
+    log.info("ultimos 5 archivos:")
+    for fecha, nombre in ultimos_5:
         log.info(f"{fecha} -> {nombre}")
         if nombre == nombre_archivo:
             log.info(f"Archivo encontrado: {nombre}")
 
             with open(ruta_archivo, 'wb') as f:
-                ftp.retrbinary(f"RETR {nombre}", f.write)
-            log.info(f"Archivo {nombre} descargado correctamente.")
-            return True, ruta_archivo
-
-    log.error("El archivo no se encontró en los ultimos 10 registros.")
-    return False, None
-
-
-# ultimos_10 = archivos[-10:]
-
-# print("ultimos 10 archivos .txt:")
-# nombre_archivo = obtener_nombre_archivo()
-# for fecha, nombre in ultimos_10:
-#     print(f"{fecha} -> {nombre}")
-#     if nombre == nombre_archivo:
-#         print(f"ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Archivo encontrado: {nombre}")
-#         with open(nombre, 'wb') as f:
-#             ftp.retrbinary(f'RETR {nombre}', f.write)
-#             print(f"Archivo {nombre} descargado exitosamente.")
-#         break
-
-# ftp.quit()
-# print("Se finaliza el proceso de descarga.")
+                try:
+                    ftp.retrbinary(f"RETR {nombre}", f.write)
+                except TimeoutError:
+                    log.error("Timeout al descargar archivo desde FTP")
+                    return False, None, "Timeout al descargar archivo"
+            return True, ruta_archivo,f"Archivo {nombre} descargado correctamente."        
+    log.error("El archivo no se encontró en los ultimos 5 registros.")
+    return False, None, "Archivo no encontrado en el FTP"
