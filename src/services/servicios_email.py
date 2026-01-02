@@ -2,7 +2,13 @@ import smtplib
 from email.message import EmailMessage
 import mimetypes
 import os
-def enviar_email(destinatario: str, mensaje: str, asunto: str, titulo_mensaje: str, adjuntos: str =None):
+import imaplib
+import email
+from email.header import decode_header
+import os
+import socket
+import ssl
+def enviar_email(destinatario: str, mensaje: str, asunto: str, titulo_mensaje: str, prioridad: int=0, adjuntos: str =None):
     mensaje = mensaje
     titulo_mensaje = titulo_mensaje
     plantilla = f"""<head>  
@@ -94,6 +100,13 @@ def enviar_email(destinatario: str, mensaje: str, asunto: str, titulo_mensaje: s
     msg["From"] = remitente
     msg["To"] = destinatario
     msg["Subject"] = asunto
+
+    # enviar correo como importante
+    if prioridad == 1:
+        msg["Importance"] = "High"
+        msg["X-Priority"] = "1"
+        msg["X-MSMail-Priority"] = "High"
+
     msg.set_content(plantilla, subtype="html")
 
     # ==============================
@@ -128,5 +141,139 @@ def enviar_email(destinatario: str, mensaje: str, asunto: str, titulo_mensaje: s
     smtp.send_message(msg)
     smtp.quit()
 
-# def descargar_adjuntos_por_asunto(imap_server: str, email_user: str,email_password: str,asunto_buscado: str,carpeta_descarga: str):
+def descargar_adjuntos_por_asunto(imap_server: str, email_user: str,email_password: str,asunto_buscado: str,carpeta_descarga: str, log, etiqueta_correo: str = None):
+    # ESTA FUNCION PROCESA SOLO UN CORREO SIN LEER A LA VEZ, DESDE EL PRIMERO EN LLEGAR HASTA EL ULTIMO EN LLEGAR
+    try:
+        log.info("Conectando con servidor de correo para descargar adjuntos:")
+        log.info(f"Servidor IMAP: {imap_server}")
+        log.info(F"Correo: {email_user}")
+        log.info(f"Contraseña: {email_password}")
+        log.info(f"Asunto: {asunto_buscado}")
+        log.info(f"Carpeta de descarga de archivos adjuntos: {carpeta_descarga}")
+        log.info(f"Etiqueta para mover el correo: {etiqueta_correo}")
 
+        ruta_adjuntos_descargados = []
+        nombre_adjuntos_descargados = []
+        os.makedirs(carpeta_descarga, exist_ok=True)
+
+        # Conexión IMAP
+        mail = imaplib.IMAP4_SSL(imap_server)
+        mail.login(email_user, email_password)
+
+        status, _ = mail.select("inbox")
+        if status != "OK":
+            log.error(f"Ocurrio un error al seleccionar inbox(bandeja de entrada) de la cuenta de correo especificada: {email_user}")
+            return False, f"Ocurrio un error al seleccionar inbox(bandeja de entrada) de la cuenta de correo especificada: {email_user}", False
+
+        log.info("Buscando correo...")
+        # Buscar correos UNSEEN por asunto
+        status, mensajes = mail.search(
+            None, 'UNSEEN', 'SUBJECT', f'"{asunto_buscado}"'
+        )
+
+        if status != "OK":
+            log.error("Ocurrió un error al realizar la búsqueda")
+            return False, "Ocurrió un error al realizar la búsqueda", False
+
+        ids_correos = mensajes[0].split()
+        if not ids_correos:
+            log.error("No se encontraron correos nuevos(sin leer) en la busqueda")
+            return False, "No se encontraron correos nuevos(sin leer) en la busqueda", False
+
+        # log.info(f"Correos encontrados: {len(ids_correos)}")
+        mail_id = ids_correos[0]
+            # adjuntos = False 
+        try:
+            status, datos = mail.fetch(mail_id, "(BODY.PEEK[])")
+            if status != "OK":
+                log.error(f"No se pudo leer el correo encontrado con ID {mail_id.decode()}")
+                return False, "No se pudo leer el correo encontrado", False
+
+            for response_part in datos:
+                if not isinstance(response_part, tuple):
+                    continue
+
+                mensaje = email.message_from_bytes(response_part[1])
+
+                from_ = mensaje.get("From")
+                subject = mensaje.get("Subject")
+                date = mensaje.get("Date")
+                
+                log.info(f"Procesando correo ID {mail_id.decode()}")
+                log.info(f"From: {from_}")
+                log.info(f"Date: {date}")
+                log.info(f"Subject: {subject}")
+
+
+                for parte in mensaje.walk():
+                    if parte.get_content_disposition() != "attachment":
+                        continue
+
+                    nombre_archivo = parte.get_filename()
+                    if not nombre_archivo:
+                        continue
+
+                    try:
+                        nombre_decodificado, encoding = decode_header(nombre_archivo)[0]
+                        if isinstance(nombre_decodificado, bytes):
+                            nombre_decodificado = nombre_decodificado.decode(
+                                encoding or "utf-8", errors="ignore"
+                            )
+
+                        ruta_archivo = os.path.join(
+                            carpeta_descarga, nombre_decodificado
+                        )
+
+                        with open(ruta_archivo, "wb") as f:
+                            f.write(parte.get_payload(decode=True))
+                        
+                        # AGREGAR RUTA Y NOMBRES DE ARCHIVOS A LAS LISTAS
+                        ruta_adjuntos_descargados.append(ruta_archivo)
+                        nombre_adjuntos_descargados.append(nombre_decodificado)
+                        adjuntos = True
+                    except (OSError, UnicodeDecodeError) as e:
+                        log.error(f"Error guardando archivo: {e}")
+                        return False, f"Error guardando archivo: {e}", False
+            # Marcar correo como leido
+            if adjuntos:
+                mail.store(mail_id, '+FLAGS', '\\Seen')
+                log.info(f"Correo ID {mail_id.decode()} marcado como LEÍDO")
+            # # mover correo a etiqueta si tiene etiqueta de destino
+            if etiqueta_correo:
+                mover_correo_a_etiqueta(mail=mail,mail_id=mail_id,etiqueta_destino=etiqueta_correo)
+                log.info(f"Correo ID {mail_id.decode()} movido a etiqueta {etiqueta_correo}")
+            
+        except imaplib.IMAP4.error as e:
+            return False, f"Error procesando correo: {e}", False
+
+        if ruta_adjuntos_descargados:
+            return ruta_adjuntos_descargados, "Achivos descargados correctamente", nombre_adjuntos_descargados
+        # mail.logout()
+        return False, "No se encontraron adjuntos en los correos", False
+    except (imaplib.IMAP4.error, socket.gaierror, ssl.SSLError) as e:
+        return False, f"Error de conexión IMAP: {e}", False
+    except Exception as e:
+        return False, f"Error inesperado: {e}", False
+    finally:
+        if mail:
+            mail.logout()
+
+def mover_correo_a_etiqueta(mail, mail_id, etiqueta_destino: str):
+    """
+    Mueve un correo a una etiqueta/carpeta IMAP.
+
+    :param mail: conexión IMAP ya autenticada
+    :param mail_id: ID del correo
+    :param etiqueta_destino: nombre de la etiqueta (ej: 'Procesados')
+    """
+    etiqueta_destino = f'"{etiqueta_destino}"'
+    # copiar correo a la etiqueta destino
+    status, _ = mail.copy(mail_id, etiqueta_destino)
+    if status != "OK":
+        raise Exception(f"No se pudo copiar el correo a la etiqueta '{etiqueta_destino}'")
+
+    # marcar el correo original como eliminado
+    mail.store(mail_id, '+FLAGS', '\\Deleted')
+
+    # ejecutar eliminación definitiva
+    mail.expunge()

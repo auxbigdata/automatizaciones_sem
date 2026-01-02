@@ -1,4 +1,4 @@
-from src.settings.config import parametrizar_logs_y_ruta_archivos
+﻿from src.settings.config import parametrizar_logs_y_ruta_archivos
 from src.settings.paths import robot_archivos
 from src.settings.config import get_logger
 from src.services.servicios_ftp import descargar_archivo, obtener_nombre_archivo, conectar_ftp
@@ -15,6 +15,8 @@ host = '10.8.0.23'
 puerto = 2121
 user = 'traeconsuerte'
 password = '800159687'
+
+# PARAMETROS DE PETICION AL SGC
 id_tercero = 495 # 830513238 - CONEX RED-PUNTO RED
 URL = "http://10.1.1.11/consuertepruebas"
 
@@ -27,7 +29,8 @@ asunto="EJECUCIÓN PROCESO PUNTO RED"
 titulo_mensaje="PRUEBAS ROBOT PUNTO RED"
 
 def main():
-    # Configuraciones iniciales
+
+    log.info("SE INICIA EL PROCESO DE PUNTO RED")
     ftp, mensaje_conexion = conectar_ftp(host, puerto, user, password)
 
     if not ftp:
@@ -40,9 +43,9 @@ def main():
             titulo_mensaje="ERROR FTP"            
         )
         return
-    
+    log.info(mensaje_conexion)
     #obtener nombre de archivo punto red
-    nombre_archivo = obtener_nombre_archivo(log)
+    nombre_archivo = obtener_nombre_archivo()
     log.info(f"Nombre del archivo a buscar: {nombre_archivo}")
 
     # descargar archivo
@@ -69,12 +72,13 @@ def main():
                 titulo_mensaje=titulo_mensaje,
                 adjuntos=ruta_archivo
             )
-    else: 
+    else:
+        log.error(mensaje_descarga_archivo) 
         log.error("Ocurrió un error al descargar el archivo. Proceso detenido.")
         enviar_email (
                 destinatario=destinatarios,
                 asunto=asunto,
-                mensaje=f"Ocurrió un error al descargar el archivo: {nombre_archivo} de punto red.<br><br>{mensaje_descarga_archivo}, proceso detenido.",
+                mensaje=f"OcurriÃ³ un error al descargar el archivo: {nombre_archivo} de punto red.<br><br>{mensaje_descarga_archivo}, proceso detenido.",
                 titulo_mensaje="FALLO EN ROBOT PUNTO RED"
             )
     ftp.quit()

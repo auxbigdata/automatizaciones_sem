@@ -26,3 +26,6 @@ python3 -m src.robots.punto_red.app
  - Podremos acceder a los archivos principales de ejecucion
    como si fueran paquetes y no carpetas.
 
+# COMANDO PARA DAR PERMISOS A LOS .SH:
+- ej: 
+  chmod +x src/scripts/banco_bogota.sh

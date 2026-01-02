@@ -1,4 +1,4 @@
-from ftplib import FTP, error_perm, error_temp
+﻿from ftplib import FTP, error_perm, error_temp
 import socket
 from datetime import datetime
 import os
@@ -7,7 +7,7 @@ archivos = []
 
 def conectar_ftp(host: str, puerto: int, user: str, passwd: str):
     """
-    Establece y retorna una conexión FTP lista para usar.
+    Establece y retorna una conexiÃ³n FTP lista para usar.
     """
     ftp = FTP()
     mensaje_conexion = ""
@@ -19,7 +19,7 @@ def conectar_ftp(host: str, puerto: int, user: str, passwd: str):
         return ftp, f"Conectado exitosamente al FTP {host}:{puerto}"
     except error_perm as e:
         # Errores permanentes (credenciales, permisos)
-        mensaje_conexion = f"Error de autenticación(credenciales) FTP: {e}"
+        mensaje_conexion = f"Error de autenticaciÃ³n(credenciales) FTP: {e}"
     except error_temp as e:
         # Errores temporales del servidor
         mensaje_conexion = f"Error temporal del servidor FTP: {e}"
@@ -29,7 +29,7 @@ def conectar_ftp(host: str, puerto: int, user: str, passwd: str):
         mensaje_conexion = f"No se pudo resolver el host FTP"
     except Exception as e:
         mensaje_conexion = f"Error inesperado al conectar al FTP {e}"
-    # Si algo falló
+    # Si algo fallÃ³
     try:
         ftp.quit()
     except Exception:
