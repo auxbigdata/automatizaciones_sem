@@ -28,6 +28,10 @@ pip3 install -r requeriments.txt
 # INSTALAR NAVEGADORES DE PLAYWRIGHT:
 playwright install
 
+pip install playwright
+python -m playwright install
+python -m playwright install-deps
+
 # GENERAR ARCHIVO REQUIREMENTS.TXT PARA ACTUALIZAR LAS LIBRERIAS SI SE INSTALA UNA NUEVA:
 pip freeze > requirements.txt
 
