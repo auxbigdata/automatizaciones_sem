@@ -2,8 +2,7 @@ import logging
 import os
 from datetime import datetime
 from src.settings.paths import robot_archivos
-# Carpeta raíz del proyecto
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Carpeta raiz del proyecto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 def parametrizar_logs_y_ruta_archivos(robot_name: str):
@@ -12,18 +11,18 @@ def parametrizar_logs_y_ruta_archivos(robot_name: str):
     return log, ruta_descarga
 
 def get_logger(robot_name: str):
-    # Crea un logger para un robot específico.
-    # Cada ejecución genera un archivo .log con fecha y hora.
+    # Crea un logger para un robot especifico.
+    # Cada ejecucion genera un archivo .log con fecha y hora.
     
-    # Carpeta donde se guardarán los logs del robot
+    # Carpeta donde se guardaron los logs del robot
     LOGS_DIR = os.path.join(BASE_DIR, "resources", robot_name, "logs")
     os.makedirs(LOGS_DIR, exist_ok=True)
 
-    # Nombre dinámico del archivo
+    # Nombre dinamico del archivo
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_file = os.path.join(LOGS_DIR, f"{timestamp}.log")
 
-    # Crear logger único por robot
+    # Crear logger unico por robot
     logger = logging.getLogger(f"{robot_name}_logger")
     logger.setLevel(logging.DEBUG)
 
@@ -46,3 +45,4 @@ def get_logger(robot_name: str):
         logger.addHandler(console_handler)
 
     return logger
+

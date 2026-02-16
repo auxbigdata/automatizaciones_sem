@@ -1,3 +1,4 @@
+from email.utils import formatdate
 import smtplib
 from email.message import EmailMessage
 import mimetypes
@@ -8,6 +9,7 @@ from email.header import decode_header
 import os
 import socket
 import ssl
+
 def enviar_email(destinatario: str, mensaje: str, asunto: str, titulo_mensaje: str, prioridad: int=0, adjuntos: str =None):
     mensaje = mensaje
     titulo_mensaje = titulo_mensaje
@@ -100,7 +102,7 @@ def enviar_email(destinatario: str, mensaje: str, asunto: str, titulo_mensaje: s
     msg["From"] = remitente
     msg["To"] = destinatario
     msg["Subject"] = asunto
-
+    msg["Date"] = formatdate(localtime=True)
     # enviar correo como importante
     if prioridad == 1:
         msg["Importance"] = "High"

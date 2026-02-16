@@ -1,14 +1,17 @@
 ﻿from src.settings.config import parametrizar_logs_y_ruta_archivos
-from src.settings.paths import robot_archivos
-from src.settings.config import get_logger
 from src.services.servicios_ftp import descargar_archivo, obtener_nombre_archivo, conectar_ftp
 from src.services.servicios_email import enviar_email
 from src.services.servicios_sgc import subir_facturacion
-import os
 import re
+from src.settings.entorno import env
 
 robot = "punto_red"
 log, ruta_descarga =parametrizar_logs_y_ruta_archivos(robot)
+
+if env.ENV == "dev":
+    prefijo = "PRUEBAS"
+else:
+    prefijo = ""
 
 # CREDENCIALES CONEXION FTP
 host = '10.8.0.23'
@@ -16,21 +19,22 @@ puerto = 2121
 user = 'traeconsuerte'
 password = '800159687'
 
-# PARAMETROS DE PETICION AL SGC
-id_tercero = 495 # 830513238 - CONEX RED-PUNTO RED
-URL = "http://10.1.1.11/consuertepruebas"
 
 destinatarios=[
     "auxanalista@consuerte.com.co",
-    "asis_desarrollo@consuerte.com.co"
 ]
 
-asunto="EJECUCIÓN PROCESO PUNTO RED"
-titulo_mensaje="PRUEBAS ROBOT PUNTO RED"
+asunto = f"{prefijo} EJECUCIÓN PROCESO PUNTO RED"
+titulo_mensaje = f"{prefijo} ROBOT PUNTO RED"
+mensaje = "Se notifica la ejecución del proceso automatico de punto red:<br><br>"
+# PARAMETROS DE PETICION AL SGC
+id_tercero = 495 # 830513238 - CONEX RED-PUNTO RED
+URL = env.URL_SGC
 
 def main():
-
     log.info("SE INICIA EL PROCESO DE PUNTO RED")
+    log.info(f"ENTORNO: {env.ENV}")
+
     ftp, mensaje_conexion = conectar_ftp(host, puerto, user, password)
 
     if not ftp:
@@ -38,9 +42,10 @@ def main():
         log.error(mensaje_conexion)
         enviar_email(
             destinatario=destinatarios,
-            mensaje=f"Se notifica la ejecución del proceso automatico de punto red:<br><br>{mensaje_conexion}",
+            mensaje=f"{mensaje}{mensaje_conexion}",
             asunto=asunto,
-            titulo_mensaje="ERROR FTP"            
+            titulo_mensaje="ERROR FTP",
+            prioridad=1            
         )
         return
     log.info(mensaje_conexion)
@@ -78,7 +83,7 @@ def main():
         enviar_email (
                 destinatario=destinatarios,
                 asunto=asunto,
-                mensaje=f"OcurriÃ³ un error al descargar el archivo: {nombre_archivo} de punto red.<br><br>{mensaje_descarga_archivo}, proceso detenido.",
+                mensaje=f"Ocurrió un error al descargar el archivo: {nombre_archivo} de punto red.<br><br>{mensaje_descarga_archivo}, proceso detenido.",
                 titulo_mensaje="FALLO EN ROBOT PUNTO RED"
             )
     ftp.quit()
