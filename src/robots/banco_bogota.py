@@ -1,14 +1,16 @@
-from src.settings.paths import robot_archivos
 from src.settings.config import parametrizar_logs_y_ruta_archivos
-from src.settings.config import get_logger
-from src.services.servicios_ftp import descargar_archivo, obtener_nombre_archivo, conectar_ftp
+from src.settings.entorno import env
 from src.services.servicios_email import descargar_adjuntos_por_asunto, enviar_email
 from src.services.servicios_sgc import subir_facturacion
-import os
 import re
 
 robot = "banco_bogota"
 log, ruta_descarga = parametrizar_logs_y_ruta_archivos(robot)
+
+if env.ENV == "dev":
+    prefijo = "PRUEBAS"
+else:
+    prefijo = ""
 
 # Parametros de correo a buscar
 correo="auxbigdata@gmail.com"
@@ -20,18 +22,19 @@ etiqueta_destino="Banco Bogota"
 # enviar correo A:
 destinatarios =[
     "auxanalista@consuerte.com.co",
-    "asis_desarrollo@consuerte.com.co"
 ]
-asunto = "EJECUCIÓN PROCESO BANCO BOGOTA"
-titulo_mensaje = "PRUEBAS ROBOT BANCO BOGOTA"
+
+asunto = f"{prefijo} EJECUCIÓN PROCESO BANCO BOGOTA"
+titulo_mensaje = f"{prefijo} ROBOT BANCO BOGOTA"
 mensaje = "Se notifica la ejecución del proceso automatico de banco bogota:<br><br>"
 
 # PARAMETROS DE PETICION AL SGC
 id_tercero = 76 # 860002964 - BANCO DE BOGOTA 
-URL = "http://10.1.1.11/consuertepruebas"
+URL = env.URL_SGC
 
 def main():
     log.info("SE INICIA EL PROCESO DE BANCO BOGOTA")
+    log.info(f"ENTORNO: {env.ENV}")
 
     ruta_archivo, mensaje_respuesta, nombre_archivo = descargar_adjuntos_por_asunto(email_user=correo,asunto_buscado=asunto_buscar,carpeta_descarga=ruta_descarga,imap_server=server_imap,email_password=pass_aplicacion, etiqueta_correo=etiqueta_destino, log=log)
 

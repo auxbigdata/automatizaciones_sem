@@ -39,6 +39,7 @@ def subir_facturacion(id_tercero: str, ruta_archivo: str, nombre_archivo: str, U
         log.info("===== PETICIÓN ANTES DE ENVIAR =====")
         log.info(f"URL: {prepared.url}")
         log.info(f"MÉTODO: {prepared.method}")
+        log.info(f"NOMBRE ARCHIVO: {nombre_archivo}")
         log.info("HEADERS:")
         log.info(prepared.headers)
         log.info("BODY:")

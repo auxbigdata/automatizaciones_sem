@@ -2,7 +2,6 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # BASE_DIR = os.path.dirname(__file__)
-print(f"RUTA: {BASE_DIR}")
 
 def robot_archivos(name):
     '''
@@ -11,7 +10,10 @@ def robot_archivos(name):
     :param name: Nombre de la carpeta del robot donde se dejaran los archivos en caso de necesitarlo
 
     '''
-    return os.path.join(robot_path(name), "archivos")
+
+    path = os.path.join(robot_path(name), "archivos")
+    os.makedirs(path, exist_ok=True)
+    return path
 
 def robot_path(name):
     return os.path.join(BASE_DIR, "resources", name)
