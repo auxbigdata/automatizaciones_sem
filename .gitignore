@@ -31,3 +31,7 @@ src/settings/__pycache__
 
 # ENTORNO
 .env
+
+# scripts - .sh
+src/scripts/logs/*
+src/scripts/logs/.gitkeep

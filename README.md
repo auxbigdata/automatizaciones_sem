@@ -23,7 +23,7 @@ source env/bin/activate
 - env/bin/python --version
 
 # INSTALAR LIBRERIAS DENTRO DEL ENTORNO VIRTUAL:
-pip3 install -r requeriments.txt
+pip3 install -r requirements.txt
 
 # INSTALAR NAVEGADORES DE PLAYWRIGHT:
 playwright install
@@ -52,3 +52,12 @@ python3 -m src.robots.punto_red.app
 # PERMISOS Y EJECUCION DE INSTALL.SH
 chmod +x install.sh
 ./install.sh
+
+# PROGRAMACION DE ROBOTS EN CRONTAB
+# robots
+DATEF= 'date +%Y_%m_%d_%H_%M_%S'
+DATEF2= 'date +%Y_%m_%d'
+
+00 06 * * * /root/automatizaciones_sem/src/scripts/banco_bogota.sh >> /root/automatizaciones_sem/src/scripts/logs/banco_bogota_$($DATEF2).log 2>&1
+
+00 03 * * * /root/automatizaciones_sem/src/scripts/punto_red.sh >> /root/automatizaciones_sem/src/scripts/logs/punto_red_$($DATEF2).log 2>&1
