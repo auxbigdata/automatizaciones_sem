@@ -1,5 +1,5 @@
 from playwright.sync_api import sync_playwright
-
+from datetime import datetime, timedelta
 
 # def abrir_navegador_con_perfil(perfil: str):
 #     # perfil_chrome = r"C:\\Users\\userapp\\AppData\\Local\\Google\\Chrome\\User Data\\Consuerte\\WhatsApp"
@@ -14,12 +14,36 @@ from playwright.sync_api import sync_playwright
 
 #     page = context.new_page()
 #     return page
-def abrir_navegador():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(accept_downloads=True)
-        page = context.new_page()
+
+
+
+
+def abrir_navegador(ruta_descargas: str, log: object, perfil: str = None):
+    try:    
+        playwright = sync_playwright().start()
+        
+        if perfil:
+            log.info("Abriendo Navegador")
+            context = playwright.chromium.launch_persistent_context(
+                user_data_dir=perfil,
+                headless=True,
+                accept_downloads=True,
+                downloads_path=ruta_descargas,
+                channel="chrome"  # Usa Chrome real, no Chromium
+            )
+            page = context.pages[0] if context.pages else context.new_page()
+            browser = None
+        else:
+            log.info("Abriendo Navegador")
+            browser = playwright.chromium.launch(headless=True)
+            context = browser.new_context(
+                accept_downloads=True,
+            )
+            page = context.new_page()
         return page
+    except Exception as e:
+        return None
+
 
 def login(page, config):
     """
@@ -76,6 +100,23 @@ def login(page, config):
     except Exception as e:
         print(f"❌ Error al iniciar sesión en {nombre_sitio}: {e}")
         return False
+
+def ir_a_url(page, url: str, log):
+    try:
+        log.info(f"Navegando a {url}")
+        page.goto(url, timeout=30000)
+        page.wait_for_load_state("networkidle")
+        log.info("Navegacion Exitosa")
+        return True
+    except Exception as e:
+        log.error(f"Error Navegando a{url}: {e}")
+        return False
+
+
+# Funcion Obtener Fecha Cofrem
+def obtener_fecha_ayer(formato: str = "%Y/%m/%d"):
+    ayer = datetime.now() - timedelta(days=1)
+    fecha_ayer = 
     
 # USER = "800159687"
 # PASS = "C0ns43rt3"
@@ -92,20 +133,4 @@ def login(page, config):
 #     # "btn_text": "" # Buscamos por el texto del botón
 # }
 
-    
-# USER = "rdiaz@consuerte.com.co"
-# PASS = "C0nsu2025#"
-
-# config = {
-#     "nombre": "cofres_ inteligentes",
-#     "url_login": "https://www.24sevenbrinks.com/es/login",
-#     "url_home": "https://www.24sevenbrinks.com/es",
-#     # "url_home": "https://www.24sevenbrinks.com/es/static-report/deposits-statement-report",
-#     "user": USER,
-#     "password": PASS,
-#     "sel_user": 'input[formcontrolname="email"]',
-#     "sel_pass": 'input[formcontrolname="password"]',
-#     # "sel_button": "button[type='submit']"
-#     # "btn_text": "" # Buscamos por el texto del botón
-# }
-
+ 
