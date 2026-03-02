@@ -67,13 +67,13 @@ def main():
         log.info(f"RESPUESTA DE LA PETICION: {response.text}")
         m = re.search(r"stopUpload\(\s*\d+\s*,\s*'(.*?)'", response.text)
         if m:
-            mensaje = m.group(1)
+            mensaje_subir_facturacion = m.group(1)
             log.info(f"STATUS_CODE: {response.status_code}")
-            log.info(mensaje)
+            log.info(mensaje_subir_facturacion)
             enviar_email (
                 destinatario=destinatarios,
                 asunto=asunto,
-                mensaje=f"Se notifica la ejecución del proceso automatico de punto red:<br><br>{mensaje}.<br><br>Nombre Archivo: {nombre_archivo}",
+                mensaje=f"Se notifica la ejecución del proceso automatico de punto red:<br><br>{mensaje_subir_facturacion}.<br><br>Nombre Archivo: {nombre_archivo}",
                 titulo_mensaje=titulo_mensaje,
                 adjuntos=ruta_archivo
             )
