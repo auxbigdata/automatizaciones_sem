@@ -43,7 +43,7 @@ def subir_facturacion(id_tercero: str, ruta_archivo: str, nombre_archivo: str, U
         log.info("HEADERS:")
         log.info(prepared.headers)
         log.info("BODY:")
-        log.info(prepared.body)
+        # log.info(prepared.body)
         log.info("===================================")
 
         response = session.send(prepared)

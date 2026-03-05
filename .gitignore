@@ -22,6 +22,13 @@ resources/cofres_inteligentes/archivos/*
 resources/cofres_inteligentes/logs/*
 !resources/cofres_inteligentes/logs/.gitkeep
 
+# COFREM
+resources/cofrem/archivos/*
+!resources/cofrem/archivos/.gitkeep
+
+resources/cofrem/logs/*
+!resources/cofrem/logs/.gitkeep
+
 # __PYCHACHE__
 src/services/__pycache__
 src/__pycache__
