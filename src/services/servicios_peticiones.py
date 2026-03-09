@@ -1,6 +1,10 @@
+import base64
+from datetime import datetime
 import requests
 import cgi
 import os
+import urllib
+from src.services.utils import obtener_fecha_ayer
 
 def iniciar_sesion(url: str, headers: dict, payload: dict, log: object):
     try:
@@ -81,3 +85,105 @@ def descargar_reporte(session: object, url: str, headers: dict, payload: dict, l
     except requests.exceptions.RequestException as e:
         return None, f"Ocurrió un error en el proceso de descargar el archivo: {e}", None
 
+def iniciar_sesion_brinks(log):
+    session = requests.Session()
+
+    url = "https://www.24sevenbrinks.com/api/v1/account/login"
+
+    payload = {
+        'password': 'C0nsu2025#',
+        'username': 'rdiaz@consuerte.com.co'
+    }
+    # Cabeceras de navegador real
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "es",
+        "Sec-Ch-Ua": '"Not:A-Brand";v="99", "Google Chrome";v="145", "Chromium";v="145"',
+        "Origin": "https://www.24sevenbrinks.com"
+    }
+
+    try:
+        response = session.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            user_id = response.json().get("sub")
+
+            # 1. Obtener ANTIFORGERY Y Token
+            session.get("https://www.24sevenbrinks.com/api/v1/account/getantiforgerytoken")
+            token_raw = session.cookies.get('CWP-SITE-XSRF-TOKEN') or ""
+            session.headers.update({"X-XSRF-TOKEN": urllib.parse.unquote(token_raw)})
+
+            # 2. Cargar Permisos y preferencias del usuario
+            session.get(f"https://www.24sevenbrinks.com/api/v1/gateway/account-grants/grants/{user_id}")
+            session.get(f"https://www.24sevenbrinks.com/api/v1/gateway/userpreferences/{user_id}")
+            session.get("https://www.24sevenbrinks.com/api/v1/gateway/user")
+
+            session.user_id = user_id
+            log.info("Petición enviada exitosamente.")
+            log.info(f"Respuesta del servidor: {response.json()}")
+            return session, response
+        else:
+            log.info(f"Error en la Petición. Codigo de estado: {response.status_code}")
+            return False, f"Login fallido. Código de estado: {response.status_code}"
+    except Exception as e:
+        log.info(f"Ocurrió un error de conexión: {e}")
+        return False, f"Error de conexión: {e}"
+
+def descargar_reporte_brinks(session, ruta_descargas, log):
+    url = "https://www.24sevenbrinks.com/api/v1/gateway/static-report/deposits-statement-report"
+
+    # llamar funcion de utils
+    ayer_str = obtener_fecha_ayer()
+    ayer_dt = datetime.now()
+    
+    log.info(f"fecha para descargar el reporte: {ayer_str}")
+    payload = {
+        "renderType": 2,
+        "initialDate": f"{ayer_str}T05:00:00.000Z",
+        "endDate": f"{ayer_str}T05:00:00.000Z",
+        "branchId": None,
+        "contractCode": None,
+        "countryId": None,
+        "customerName": "CONSUERTE",
+        "depositType": None,
+        "endTime": None,
+        "financialModality": None,
+        "initialTime": None,
+        "transporterId": None
+    }
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "es",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Content-Type": "application/json",
+        "Referer": "https://www.24sevenbrinks.com/es/static-report/deposits-statement-report",
+        "Origin": "https://www.24sevenbrinks.com"
+    }
+
+    try:
+        response = session.post(url, json=payload, headers=headers, stream = True, timeout=90)
+
+        if response.status_code == 200:
+            data_jason = response.json()
+            contenido_base64 = data_jason.get("content")
+            if not contenido_base64:
+                log.info("El servidor respondio pero el campo 'content' está vacio.")
+                return None
+            archivo_bytes = base64.b64decode(contenido_base64)
+
+            os.makedirs(ruta_descargas, exist_ok=True)
+            nombre_archivo = f"Informe de Extracto de Depósitos_{ayer_dt.day}_{ayer_dt.month}_{str(ayer_dt.year)[2:]} {datetime.now().strftime('%H_%M')}.xlsx"
+            ruta_final = os.path.join(ruta_descargas, nombre_archivo)
+
+            with open(ruta_final, "wb") as f:
+                f.write(archivo_bytes)
+            log.info(f"Reporte guardado en: {ruta_final}")
+            return ruta_final, "Reporte descargado exitosamente.", os.path.basename(ruta_final)  
+        else:
+            log.error(f"Error {response.status_code}: {response.text}")
+            return None, f"Error al descargar el reporte. Código: {response.status_code}", None  
+    except requests.exceptions.RequestException as e:
+        log.info(f"Ocurrió un error de conexión: {e}")
+        return None, f"Error de conexión: {e}", None 
