@@ -11,6 +11,7 @@ class Entorno:
     URL_LOGIN_COFREM: str
     URL_HOME_COFREM: str
     URL_REPORTE_COFREM: str
+    URL_SGC_SUBIR_ARCHIVO_COFRES: str
 
 load_dotenv()
 
@@ -21,7 +22,8 @@ env = Entorno(
     PASS_COFREM=os.getenv("PASS_COFREM"),
     URL_LOGIN_COFREM=os.getenv("URL_LOGIN_COFREM"),
     URL_HOME_COFREM=os.getenv("URL_HOME_COFREM"),
-    URL_REPORTE_COFREM=os.getenv("URL_REPORTE_COFREM")
+    URL_REPORTE_COFREM=os.getenv("URL_REPORTE_COFREM"),
+    URL_SGC_SUBIR_ARCHIVO_COFRES=os.getenv("URL_SGC_SUBIR_ARCHIVO_COFRES")
     )
 
 print(env.URL_SGC)

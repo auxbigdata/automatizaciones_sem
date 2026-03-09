@@ -1,3 +1,6 @@
+from datetime import datetime
+import json
+import os
 import requests
 
 def subir_facturacion(id_tercero: str, ruta_archivo: str, nombre_archivo: str, URL_UPLOAD, log: object):
@@ -52,3 +55,33 @@ def subir_facturacion(id_tercero: str, ruta_archivo: str, nombre_archivo: str, U
         # log.info("RESPUESTA:")
         # log.info(response.text)
         return response
+    
+def subir_archivo_cofres_inteligentes(ruta_archivo, log, URL):
+    if not os.path.exists(ruta_archivo):
+        log.error("El archivo no existe.")
+        return None
+
+    headers = {"Authentication": json.dumps({"nickname": 1029980182, "nivel": "1"})}
+    data = {
+        "json": json.dumps([{
+            "con": "33",
+            "usuario": 1029980182,
+            "ip_address": "10.8.0.27",
+            "fechasys": datetime.now().strftime("%Y-%m-%d"),
+            "tipoa": "0",
+            "tipo": "0"
+        }]),
+        "tipoa": "0"
+    }
+
+    log.info(f"Subiendo archivo: {os.path.basename(ruta_archivo)}")
+    try:
+        with open(ruta_archivo, "rb") as f:
+            files = {"myfile": (os.path.basename(ruta_archivo), f, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+            r = requests.post(URL, headers=headers, data=data, files=files, timeout=120)
+        log.info(f"Status: {r.status_code} | Respuesta: {r.text}")
+        return r  # ← retornar response completo
+    except Exception as e:
+        log.error(f"Error subiendo archivo: {e}")
+        return None
+    
