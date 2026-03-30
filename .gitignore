@@ -15,6 +15,13 @@ resources/banco_bogota/archivos/*
 resources/banco_bogota/logs/*
 !resources/banco_bogota/logs/.gitkeep
 
+# EMSA
+resources/emsa/archivos/*
+!resources/emsa/archivos/.gitkeep
+
+resources/emsa/logs/*
+!resources/emsa/logs/.gitkeep
+
 # COFRES INTELIGENTES
 resources/cofres_inteligentes/archivos/*
 !resources/cofres_inteligentes/archivos/.gitkeep
@@ -28,6 +35,13 @@ resources/cofrem/archivos/*
 
 resources/cofrem/logs/*
 !resources/cofrem/logs/.gitkeep
+
+# SERVICIOS PUBLICOS
+resources/servicios_publicos/archivos/*
+!resources/servicios_publicos/archivos/.gitkeep
+
+resources/servicios_publicos/logs/*
+!resources/servicios_publicos/logs/.gitkeep
 
 # __PYCHACHE__
 src/services/__pycache__
