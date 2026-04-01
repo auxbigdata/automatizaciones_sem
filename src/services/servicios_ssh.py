@@ -1,4 +1,5 @@
 import paramiko
+import os
 
 def conexion_sh(ip, puerto, username, password, log):
     # host = ip
@@ -49,3 +50,29 @@ def comandos_ssh(log, comandos, client):
 
     except Exception as e:
         log.error(f"Error ejecutando comandos: {e}")
+
+def enviar_archivo(log, client, ruta_local, ruta_remota):
+    try:
+        log.info(ruta_local)
+        log.info(ruta_remota)
+
+        # 1. Validar si el archivo existe en Windows antes de conectar
+        if not os.path.exists(ruta_local):
+            log.info(f"Error: El archivo NO existe en Windows: {ruta_local}")
+            return
+
+        # 2. Asegurar que la carpeta exista en Ubuntu
+        # El comando 'mkdir -p' no da error si la carpeta ya existe
+        # client.exec_command('mkdir -p /home/gamble/Documentos/prueba_try_icon')
+
+        # 3. Intentar el envío
+        sftp = client.open_sftp()
+        sftp.put(ruta_local, ruta_remota)
+        sftp = client.open_sftp()
+        sftp.put(ruta_local, ruta_remota)
+        sftp.close()
+        log.info(f"Archivo {ruta_local} enviado a {ruta_remota}")
+        return True
+    except Exception as e:
+        log.error(f"Error al enviar archivo: {e}")
+        return False
