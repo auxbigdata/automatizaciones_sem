@@ -22,6 +22,7 @@ password = '800159687'
 
 destinatarios=[
     "auxanalista@consuerte.com.co",
+    "auxsenadesarrollo@consuerte.com.co"
 ]
 
 asunto = f"{prefijo} EJECUCIÓN PROCESO PUNTO RED"
