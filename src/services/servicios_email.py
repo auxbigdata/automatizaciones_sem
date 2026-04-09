@@ -279,3 +279,96 @@ def mover_correo_a_etiqueta(mail, mail_id, etiqueta_destino: str):
 
     # ejecutar eliminación definitiva
     mail.expunge()
+
+def leer_correos_sin_leer(imap_server: str, email_user: str,email_password: str,asunto_buscado: str,carpeta_descarga: str, log, etiqueta_correo: str = None):
+    try: 
+        log.info("INICIANDO LECTURA DE CORREOS RECIBIDOS SIN LEER")
+        os.makedirs(carpeta_descarga, exist_ok=True)
+
+        mail = imaplib.IMAP4_SSL(imap_server)
+        mail.login(email_user, email_password)
+        mail.select("inbox")
+
+        # filtra por todos los correos no leidos
+        status, mensajes = mail.search(None, 'UNSEEN')
+        if status != "OK":
+            return False, "Error al conectar con la bandeja", False
+
+        ids_correos = mensajes[0].split()
+        if not ids_correos:
+            log.info("No hay correos nuevos para procesar.")
+            return False, "No hay correos nuevos", False
+        
+        ruta_adjuntos_descargados = []
+        nombre_adjuntos_descargados = []
+        correo_encontrado_id = None
+
+        # PASO 2: Filtrar manualmente en Python el primer correo que coincida
+        for mail_id in ids_correos:
+            # Traemos solo el encabezado para que sea rápido
+            status, data = mail.fetch(mail_id, '(BODY.PEEK[HEADER.FIELDS (SUBJECT)])')
+            header_content = data[0][1].decode('utf-8', errors='ignore')
+            
+            # Verificamos si el texto (ej: "Archivos Recaudos Ciclo") está en el Subject
+            if asunto_buscado.lower() in header_content.lower():
+                correo_encontrado_id = mail_id
+                log.info(f"Correo coincidente encontrado: ID {mail_id.decode()}")
+                break 
+
+        if not correo_encontrado_id:
+            return False, "No se encontraron correos nuevos(sin leer) en la busqueda", False
+
+        # PASO 3: Procesar el correo encontrado (tu lógica original)
+        status, datos = mail.fetch(correo_encontrado_id, "(BODY.PEEK[])")
+        adjuntos_encontrados = False
+
+        for response_part in datos:
+            if isinstance(response_part, tuple):
+                mensaje = email.message_from_bytes(response_part[1])
+
+                from_ = mensaje.get("From")
+                subject = mensaje.get("Subject")
+                date = mensaje.get("Date")
+                
+                log.info(f"Procesando correo ID {mail_id.decode()}")
+                log.info(f"From: {from_}")
+                log.info(f"Date: {date}")
+                log.info(f"Subject: {subject}")
+                    
+                mensaje = email.message_from_bytes(response_part[1])
+                
+                for parte in mensaje.walk():
+                    if parte.get_content_disposition() == "attachment":
+                        nombre_archivo = parte.get_filename()
+                        if nombre_archivo:
+                            # Decodificar nombre
+                            nombre_decodificado, encoding = decode_header(nombre_archivo)[0]
+                            if isinstance(nombre_decodificado, bytes):
+                                nombre_decodificado = nombre_decodificado.decode(encoding or "utf-8", errors="ignore")
+                            
+                            ruta_archivo = os.path.join(carpeta_descarga, nombre_decodificado)
+                            with open(ruta_archivo, "wb") as f:
+                                f.write(parte.get_payload(decode=True))
+                            
+                            ruta_adjuntos_descargados.append(ruta_archivo)
+                            nombre_adjuntos_descargados.append(nombre_decodificado)
+                            adjuntos_encontrados = True
+
+        # PASO 4: Acciones finales
+        if adjuntos_encontrados:
+            mail.store(correo_encontrado_id, '+FLAGS', '\\Seen')
+            if etiqueta_correo:
+                # Aquí llamarías a tu función mover_correo_a_etiqueta
+                mover_correo_a_etiqueta(mail=mail,mail_id=mail_id,etiqueta_destino=etiqueta_correo)
+                log.info(f"Moviendo correo a {etiqueta_correo}...")
+            
+            return ruta_adjuntos_descargados, "Descarga exitosa", nombre_adjuntos_descargados
+
+        return False, "No se encontraron adjuntos en el correo", False
+
+    except Exception as e:
+        log.error(f"Error en búsqueda flexible: {str(e)}")
+        return False, str(e), False
+    finally:
+        if mail:
+            mail.logout()

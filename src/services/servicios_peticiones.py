@@ -5,6 +5,7 @@ import cgi
 import os
 import urllib
 from src.services.utils import obtener_fecha_ayer
+import xml.etree.ElementTree as ET
 
 def iniciar_sesion(url: str, headers: dict, payload: dict, log: object):
     try:
@@ -57,7 +58,7 @@ def descargar_reporte(session: object, url: str, headers: dict, payload: dict, l
         #     nombre_archivo = "pagos_cofrem.txt"
         #     return None, f"No se encontró el archivo en la petición {content_disposition}", None
 
-        # VALIDACIÓN CRÍTICA: Si no hay header o está vacío, abortamos
+        # VALIDACIÓN CRÝTICA: Si no hay header o está vacío, abortamos
         if not content_disposition:
             log.error("El servidor no envió el encabezado Content-Disposition.")
             log.info(f"Codigo de estado: {response.status_code}")
@@ -84,7 +85,7 @@ def descargar_reporte(session: object, url: str, headers: dict, payload: dict, l
 
     except requests.exceptions.RequestException as e:
         return None, f"Ocurrió un error en el proceso de descargar el archivo: {e}", None
-
+    
 def iniciar_sesion_brinks(log):
     session = requests.Session()
 
@@ -186,4 +187,98 @@ def descargar_reporte_brinks(session, ruta_descargas, log):
             return None, f"Error al descargar el reporte. Código: {response.status_code}", None  
     except requests.exceptions.RequestException as e:
         log.info(f"Ocurrió un error de conexión: {e}")
-        return None, f"Error de conexión: {e}", None 
+        return None, f"Error de conexión: {e}", None     
+# -------------------------------ROBOT SERVICIOS PUBLICOS----------------------------------------------
+def verificar_url_emsa(url:str, log:object):
+    try:
+        log.info(f"verificando disponibilidad de URL{url}")
+        response = requests.get(url, timeout=15, verify=False)
+        
+        if response.status_code == 200:
+            log.info(f"URL disponible - Código: {response.status_code}")
+            return True, "OK"
+        else:
+           log.info(f"URL responde pero con código inesperado: {response.status_code}")
+        return False, f"URL responde pero con código inesperado: {response.status_code}"
+
+    except requests.exceptions.Timeout:
+        log.error("El servidor no respondio a tiempo (Timeout).")
+        return False, "El servidor no respondio a tiempo (Timeout)."
+    except requests.exceptions.ConnectionError:
+        log.error("No se pudo conectar al servidor.")
+        return False, "No se pudo conectar al servidor."
+    except requests.exceptions.RequestException as e:
+        log.error(f"Error inesperado al verificar URL: {e}")
+        return False, f"Error inesperado al verificar URL: {e}"
+
+# def descargar_xml_emsa(url: str, codigo_cliente: str, ruta_descarga: str, log: object):
+#     try:
+#         log.info(f"descargando XML del cliente {codigo_cliente}")
+
+#         if not os.path.exists(ruta_descarga):
+#             os.makedirs(ruta_descarga)
+
+#         response = requests.get(url, verify=False)
+
+#        # Sacamos el nombre original del archivo desde la URL final
+#         nombre_archivo = response.url.split('/')[-1].split('?')[0]
+#         ruta_completa = os.path.join(ruta_descarga, nombre_archivo)
+
+#         with open(ruta_completa, "wb") as f:
+#             f.write(response.content)
+
+#         # log.info(f"XML guardado como: {nombre_archivo}")
+#         # log.info(f"XML guardado en  : {ruta_completa}")
+#         return ruta_completa, None
+
+#     except requests.exceptions.Timeout:
+#         return None, f"Timeout al descargar XML del cliente {codigo_cliente}"
+#     except requests.exceptions.ConnectionError:
+#         return None, f"Error de conexión al descargar XML del cliente {codigo_cliente}"
+#     except requests.exceptions.RequestException as e:
+#         return None, f"Error inesperado: {e}"
+    
+# def leer_xml_emsa(ruta_xml: str, log: object):
+#     try:
+#         log.info(f"leyendo xml: {ruta_xml}")
+        
+#         estructura_xml = ET.parse(ruta_xml)
+#         datos_xml = estructura_xml.getroot()
+
+#         valor = ""
+#         fecha = ""
+
+#         ns = {
+#             # busca etiquetas en el xml que tiene namespace(identificador unico para etiquetas)
+#             'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
+#         }
+
+#         # el find() sirve para buscar un solo elemento
+#         description = datos_xml.find('.//cbc:Description', ns)
+
+#         if description is not None and description.text:
+#             xml_interno = description.text.strip()
+
+#             root_interno = ET.fromstring(xml_interno)
+        
+#         # el findall() busca muchos elementos
+#         for note in root_interno.findall('.//cbc:Note', ns):
+#             texto = note.text
+
+#             if texto and 'DAT39_ASEO' in texto:
+#                 valor = texto.split(":")[-1]
+
+#             elif texto and 'FECH_VENC' in texto:
+#                 fecha = texto.split(":")[-1]
+
+#         return valor, fecha, None
+
+#     except ET.ParseError as e:
+#         log.error(f"El archivo no es un XML válido: {e}")
+#         return None, None, f"XML inválido: {e}"
+
+#     except Exception as e:
+#         log.error(f"Error inesperado al leer XML: {e}")
+#         return None, None, str(e)
+
+# -----------------------------DESCARGA PDF RECIBO EMSA------------------------------------------------

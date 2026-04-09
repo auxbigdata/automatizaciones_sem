@@ -23,7 +23,7 @@ def abrir_navegador(ruta_descargas: str, log: object, perfil: str = None):
         playwright = sync_playwright().start()
         
         if perfil:
-            log.info("Abriendo Navegador")
+            log.info("Abriendo Navegador con perfil")
             context = playwright.chromium.launch_persistent_context(
                 user_data_dir=perfil,
                 headless=True,
@@ -32,7 +32,6 @@ def abrir_navegador(ruta_descargas: str, log: object, perfil: str = None):
                 channel="chrome"  # Usa Chrome real, no Chromium
             )
             page = context.pages[0] if context.pages else context.new_page()
-            browser = None
         else:
             log.info("Abriendo Navegador")
             browser = playwright.chromium.launch(headless=True)
@@ -40,9 +39,13 @@ def abrir_navegador(ruta_descargas: str, log: object, perfil: str = None):
                 accept_downloads=True,
             )
             page = context.new_page()
-        return page
+        
+        if page:
+            mensaje = "Navegador abierto exitosamente."
+            return page, mensaje
     except Exception as e:
-        return None
+        error_msg = f"Error al abrir el navegador: {str(e)}"
+        return None, error_msg
 
 
 def login(page, config):
@@ -94,12 +97,9 @@ def login(page, config):
         # Espera a que la URL cambie a la de Home o que aparezca un elemento del dashboard
         page.wait_for_url(config["url_home"], timeout=30000)
         
-        print(f"✅ Login exitoso en {nombre_sitio}")
-        return True
-
+        return True, f"Login exitoso en {nombre_sitio}"
     except Exception as e:
-        print(f"❌ Error al iniciar sesión en {nombre_sitio}: {e}")
-        return False
+        return False, f"Error al iniciar sesión en {nombre_sitio}: {e}"
 
 def ir_a_url(page, url: str, log):
     try:
@@ -111,26 +111,51 @@ def ir_a_url(page, url: str, log):
     except Exception as e:
         log.error(f"Error Navegando a{url}: {e}")
         return False
-
-
-# Funcion Obtener Fecha Cofrem
-def obtener_fecha_ayer(formato: str = "%Y/%m/%d"):
-    ayer = datetime.now() - timedelta(days=1)
-    fecha_ayer = 
     
-# USER = "800159687"
-# PASS = "C0ns43rt3"
+    
+#Funcion seleccionar fecha Cofrem 
+def fecha_ayer(page, log, sel_inicio="input[name='fecini']", sel_fin="input[name='fecfin']"):
+    try:
+        ayer = datetime.now() - timedelta(days=1)
+        fecha = ayer.strftime("%Y/%m/%d")
 
-# config = {
-#     "nombre": "cofrem",
-#     "url_login": "http://186.117.156.122:8082/Bonos/login.jsp",
-#     "url_home": "http://186.117.156.122:8082/Bonos/request-manager.jsp",
-#     "user": USER,
-#     "password": PASS,
-#     "sel_user": "input[name='id_usuario']",
-#     "sel_pass": "input[name='pwd_usuario']",
-#     "sel_button": "button[type='submit']"
-#     # "btn_text": "" # Buscamos por el texto del botón
-# }
+        log.info(f"Obteniendo fecha {fecha}")
+
+        page.evaluate(f"""
+            const ini = document.querySelector("{sel_inicio}");
+            const fin = document.querySelector("{sel_fin}");
+
+            if (!ini || !fin) {{
+                throw new Error("No se encontraron los campos de fecha");
+            }}
+
+            ini.value = "{fecha}";
+            fin.value = "{fecha}";
+
+            ini.dispatchEvent(new Event('change', {{ bubbles: true }}));
+            fin.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        """)
+
+        return True
+
+    except Exception as e:
+        log.error(f"Error seteando fechas: {e}")
+        return False
+
+# Funcion descargar archivo Cofrem
+def descargar_archivo_cofrem(page, log, selector_boton: str, timeout: int = 60000):
+    try:
+        log.info("Iniciando Descarga del archivo")
+        page.wait_for_selector(selector_boton, timeout=30000)
+        with page.expect_download(timeout=timeout) as download_info:
+            page.click(selector_boton)
+            
+        download = download_info.value
+        log.info("Descarga inciada correctamente")
+        log.info(download)
+        return download
+    except Exception as e:
+        log.error(f"error en la descarga {e}")
+        return None
 
  

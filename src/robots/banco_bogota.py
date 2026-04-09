@@ -22,6 +22,7 @@ etiqueta_destino="Banco Bogota"
 # enviar correo A:
 destinatarios =[
     "auxanalista@consuerte.com.co",
+    "auxsenadesarrollo@consuerte.com.co"
 ]
 
 asunto = f"{prefijo} EJECUCIÓN PROCESO BANCO BOGOTA"
