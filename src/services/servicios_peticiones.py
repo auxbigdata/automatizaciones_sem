@@ -128,7 +128,7 @@ def iniciar_sesion_brinks(log):
             return False, f"Login fallido. Código de estado: {response.status_code}"
     except Exception as e:
         log.info(f"Ocurrió un error de conexión: {e}")
-        return False, f"Error de conexión: {e}"
+        return False, f"Error de conexión: <br><br>{e}"
 
 def descargar_reporte_brinks(session, ruta_descargas, log):
     url = "https://www.24sevenbrinks.com/api/v1/gateway/static-report/deposits-statement-report"

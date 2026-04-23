@@ -20,7 +20,7 @@ destinatarios = [
 
 asunto = f"{prefijo} EJECUCIÓN PROCESO COFRES_INTELIGENTES"
 titulo_mensaje = f"{prefijo} ROBOT COFRES INTELIGENTES"
-mensaje = "Se notifica la ejecución del proceso automatico de Cofres inteligentes: "
+mensaje = "Se notifica la ejecución del proceso automatico de Cofres inteligentes: <br><br>"
 
 URL_SUBIR_ARCHIVO = env.URL_SGC_SUBIR_ARCHIVO_COFRES
 

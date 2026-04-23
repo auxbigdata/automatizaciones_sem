@@ -13,11 +13,11 @@ else:
     prefijo = ""
 
 # Parametros de correo a buscar
-correo="auxbigdata@gmail.com"
-pass_aplicacion="mpclkdbfgfqanxvd"
+correo="codesarpa.consuerte@gmail.com"
+pass_aplicacion="ktgwqpeinquwykqq"
 asunto_buscar="Archivos SIC Redeban Multicolor S.A."
 server_imap="imap.gmail.com"
-etiqueta_destino="Banco Bogota"
+etiqueta_destino="Banco de Bogota"
 
 # enviar correo A:
 destinatarios =[
