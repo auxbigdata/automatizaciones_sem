@@ -1,30 +1,31 @@
-from dotenv import load_dotenv
-from dataclasses import dataclass
-import os
+# Archivo autogenerado por sync_env.py
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-@dataclass
-class Entorno:
-    URL_SGC: str
+class Entorno(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
+    
     ENV: str
-    USER_COFREM: str
+    URL_SGC: str
+    USER_COFREM: int
     PASS_COFREM: str
     URL_LOGIN_COFREM: str
     URL_HOME_COFREM: str
     URL_REPORTE_COFREM: str
     URL_SGC_SUBIR_ARCHIVO_COFRES: str
+    URL_GRILLA: str
+    URL_FINALIZAR_EMSA: str
+    URL_DESCARTAR_EMSA: str
+    URL_HOME_EMSA: str
+    URL_DESCARGAR_PDF_EMSA: str
+    URL_COMPARTIDA: str
+    IP_COMPARTIDA: str
+    USER_COMPARTIDA: str
+    PASS_COMPARTIDA: str
+    DB_HOST: str
+    DB_PORT: int
+    DB_NAME: str
+    DB_USER: str
+    DB_PASS: str
 
-load_dotenv()
-
-env = Entorno(
-    URL_SGC=os.getenv("URL_SGC"),
-    ENV=os.getenv("ENV"),
-    USER_COFREM=os.getenv("USER_COFREM"),
-    PASS_COFREM=os.getenv("PASS_COFREM"),
-    URL_LOGIN_COFREM=os.getenv("URL_LOGIN_COFREM"),
-    URL_HOME_COFREM=os.getenv("URL_HOME_COFREM"),
-    URL_REPORTE_COFREM=os.getenv("URL_REPORTE_COFREM"),
-    URL_SGC_SUBIR_ARCHIVO_COFRES=os.getenv("URL_SGC_SUBIR_ARCHIVO_COFRES")
-    )
-
-print(env.URL_SGC)
-print(env.ENV)
+# Instancia global lista para ser importada
+env = Entorno()
