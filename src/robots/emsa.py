@@ -14,7 +14,7 @@ else:
 
 # Parametros de correo a buscar
 correo="auxbigdata@gmail.com"
-pass_aplicacion="mpclkdbfgfqanxvd"
+pass_aplicacion="aaxbkssoagbncbjx"
 asunto_buscar="Archivos Recaudos Ciclo"
 # asunto_buscar = f'SUBJECT "{asunto_buscar}"'
 server_imap="imap.gmail.com"
