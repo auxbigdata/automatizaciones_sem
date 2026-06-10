@@ -18,7 +18,7 @@ pass_aplicacion="ktgwqpeinquwykqq"
 asunto_buscar="Archivos Recaudos Ciclo"
 # asunto_buscar = f'SUBJECT "{asunto_buscar}"'
 server_imap="imap.gmail.com"
-etiqueta_destino="emsa"
+etiqueta_destino="Emsa"
 # etiqueta_destino="Banco Bogota"
 
 # enviar correo A:
