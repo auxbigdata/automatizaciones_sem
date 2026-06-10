@@ -13,12 +13,12 @@ else:
     prefijo = ""
 
 # Parametros de correo a buscar
-correo="codesarpa.consuerte@gmail.com"
-pass_aplicacion="ktgwqpeinquwykqq"
+correo="auxbigdata@gmail.com"
+pass_aplicacion="vyiaglljqjjtlovl"
 asunto_buscar="Archivos Recaudos Ciclo"
 # asunto_buscar = f'SUBJECT "{asunto_buscar}"'
 server_imap="imap.gmail.com"
-etiqueta_destino="Emsa"
+etiqueta_destino="emsa"
 # etiqueta_destino="Banco Bogota"
 
 # enviar correo A:
