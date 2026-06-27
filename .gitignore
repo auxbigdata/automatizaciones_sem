@@ -43,6 +43,12 @@ resources/servicios_publicos/archivos/*
 resources/servicios_publicos/logs/*
 !resources/servicios_publicos/logs/.gitkeep
 
+# KENNO
+resources/kenno/archivos/*
+!resources/kenno/archivos/.gitkeep
+
+resources/kenno/logs/*
+!resources/kenno/logs/.gitkeep
 # __PYCHACHE__
 src/services/__pycache__
 src/__pycache__
