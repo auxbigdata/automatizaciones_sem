@@ -3,9 +3,15 @@ from datetime import datetime
 import requests
 import cgi
 import os
+import pandas as pd
 import urllib
-from src.services.utils import obtener_fecha_ayer
+from src.services.utils import obtener_fecha_ayer, conectar_a_carpeta_compartida
 import xml.etree.ElementTree as ET
+import pdfplumber
+import re
+import urllib3
+import smbclient
+import zipfile
 
 def iniciar_sesion(url: str, headers: dict, payload: dict, log: object):
     try:
@@ -188,6 +194,7 @@ def descargar_reporte_brinks(session, ruta_descargas, log):
     except requests.exceptions.RequestException as e:
         log.info(f"Ocurrió un error de conexión: {e}")
         return None, f"Error de conexión: {e}", None     
+    
 # -------------------------------ROBOT SERVICIOS PUBLICOS----------------------------------------------
 def verificar_url_emsa(url:str, log:object):
     try:
@@ -211,74 +218,248 @@ def verificar_url_emsa(url:str, log:object):
         log.error(f"Error inesperado al verificar URL: {e}")
         return False, f"Error inesperado al verificar URL: {e}"
 
-# def descargar_xml_emsa(url: str, codigo_cliente: str, ruta_descarga: str, log: object):
-#     try:
-#         log.info(f"descargando XML del cliente {codigo_cliente}")
+def consultar_grilla_emsa(url: str, headers: dict, log: object):
+    try:
+    # Realizamos la petición POST
+        response = requests.post(url, headers=headers, timeout=30)
+        
+        # Verificamos si la petición fue exitosa (Status Code 200)
+        if response.status_code == 200:
+            log.info("Petición enviada exitosamente.")
+            # log.info("Respuesta del servidor:", response.text)
+            codigos_cliente = response.text
+            return codigos_cliente
+        else:
+            log.info(f"Error en la petición. Código de estado: {response.status_code}")
 
-#         if not os.path.exists(ruta_descarga):
-#             os.makedirs(ruta_descarga)
+    except requests.exceptions.RequestException as e:
+        log.info(f"Ocurrió un error de conexión: {e}")
 
-#         response = requests.get(url, verify=False)
+def validar_contenido_factura(url, log: object):
 
-#        # Sacamos el nombre original del archivo desde la URL final
-#         nombre_archivo = response.url.split('/')[-1].split('?')[0]
-#         ruta_completa = os.path.join(ruta_descarga, nombre_archivo)
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    log.info(f"Se procede a validar el tipo de contenido de url: {url}")
+    try:
+        response = requests.get(url, timeout=30, verify=False)
+        #status_code = response.status_code
+        content_type = response.headers.get("Content-Type")
+        #txt_response = response.text
+        return content_type
+    except requests.exceptions.RequestException:
+        status_code = None
 
-#         with open(ruta_completa, "wb") as f:
-#             f.write(response.content)
+def descarga_facturas_emsa(url):
 
-#         # log.info(f"XML guardado como: {nombre_archivo}")
-#         # log.info(f"XML guardado en  : {ruta_completa}")
-#         return ruta_completa, None
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-#     except requests.exceptions.Timeout:
-#         return None, f"Timeout al descargar XML del cliente {codigo_cliente}"
-#     except requests.exceptions.ConnectionError:
-#         return None, f"Error de conexión al descargar XML del cliente {codigo_cliente}"
-#     except requests.exceptions.RequestException as e:
-#         return None, f"Error inesperado: {e}"
+    try:
+        response = requests.get(url, timeout=30, verify=False)
+        #status_code = response.status_code
+        content_type = response.headers.get("Content-Type")
+        #txt_response = response.text
+        return content_type
+    except requests.exceptions.RequestException:
+        status_code = None
+
+
+def descartar_emsa(url: str, log: object, headers: dict, codigo:str, punto_venta:str, novedad:str):
+    try:# Realizamos la petición POST
+        payload = {
+            "codigo": codigo,
+            "puntoVenta":punto_venta,
+            "novedad": novedad
+        }
+        log.info(f"descartando  factura{codigo}- {punto_venta} | novedad: {novedad}")
+
+        # Cambiamos data=payload por json=payload
+        # el servidor recibe JSON correctamente, que es lo que espera el endpoint
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+
+        if response.status_code == 200:
+            log.info(f"Factura {codigo} descartada correctamente.")
+            log.info(f"Respuesta del servidor : {response.text}")
+            return response.text #retornamos para saber si la respuesta fue exitosa
+        else:
+            log.error(f"Error al descartar. codigo: {response.status_code}| respuesta: {response.text}")
+            return None #retornamos none para indicar que fallo
+        
+    except requests.exceptions.RequestException as e:
+        log.info(f"Ocurrió un error de conexión: {e}")
+        return None
     
-# def leer_xml_emsa(ruta_xml: str, log: object):
+def finalizar_emsa(url: str, log: object, headers: dict, codigo: str, punto: str, fecha: str, valor: str, novedad: str):
+    try:# Realizamos la petición POST
+        payload = {
+            "codigo": codigo,
+            "punto":punto,
+            "fecha":fecha,
+            "valor":valor,
+            "novedad": novedad
+        }
+        log.info(f"finalizando factura{codigo} -  - {punto} | valor: {valor} | fecha: {fecha}")
+
+        # Cambiamos data=payload por json=payload
+        # el servidor recibe JSON correctamente, que es lo que espera el endpoint
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+
+        if response.status_code == 200:
+            log.info(f"Factura {codigo} Finalizado correctamente.")
+            log.info(f"Respuesta del servidor : {response.text}")
+            return response.text #retornamos para saber si la respuesta fue exitosa
+        else:
+            log.error(f"Error al descartar. codigo: {response.status_code}| respuesta: {response.text}")
+            return None #retornamos none para indicar que fallo
+        
+    except requests.exceptions.RequestException as e:
+        log.info(f"Ocurrió un error de conexión: {e}")
+
+# -----------------------------DESCARGA PDF RECIBO EMSA SERVICIOS PUBLICOS------------------------------------------------
+def descargar_pdf(url: str, nombre_pdf: str, ruta_descarga: str, log: object):
+    try:
+        log.info(f"iniciando descarga pdf del cliente {url}")
+
+        # if not os.path.exists(ruta_descarga):
+        #     os.makedirs(ruta_descarga)
+
+        response = requests.get(url, timeout=30, verify=False)
+
+        log.info(f"codigo de estado :{response.status_code}")
+        log.info(f"URL consultada : {url}")
+        log.info(f"Content-Type: {response.headers.get('Content-Type')}")
+
+        if response.status_code != 200:
+            log.error(f"Error en la respuesta del servidor: {response.status_code}") 
+            return None, f"Error HTTP: {response.status_code}", False
+        
+        # verificamos que realmente sea un pdf
+        content_type = response.headers.get("Content-Type", "")
+        if "application/pdf" not in content_type:
+            log.error(f"El servidor respondió 200 pero el contenido no es PDF. Content-Type recibido: {content_type}")
+            return None, f"Contenido no es PDF. Content-Type: {content_type}", False
+
+        #AQUÍ ESTÁ LA CLAVE
+        pdf_bytes = response.content
+
+        # ruta_pdf = os.path.join(ruta_descarga, f"{nombre_pdf}.pdf")
+        ruta_pdf = rf"{ruta_descarga}\{nombre_pdf}.pdf"
+
+        try:
+            with smbclient.open_file(ruta_pdf, mode='wb') as f:
+                f.write(pdf_bytes)
+        # with open(ruta_pdf, "wb") as f:
+        #     f.write(pdf_bytes)
+        except Exception as e:
+            log.error(f"Error al escribir el archivo: {e}")
+            return None, f"Error al escribir el archivo: {e}", False
+
+        if smbclient.path.isfile(ruta_pdf):
+            log.info(f"PDF descargado correctamente: {ruta_pdf}")
+            return ruta_pdf, f"PDF descargado correctamente: {ruta_pdf}", True
+        else:
+            log.error(f"El archivo no se encontró en la ruta tras la escritura: {ruta_pdf}")
+            return None, f"Error: No se pudo verificar la existencia del archivo en {ruta_pdf}", False
+
+    except Exception as e:
+        log.error(f"Error inesperado: {e}")
+        return None, f"Error inesperado: {e}", False
+
+def generar_excel_consolidado(datos:list, ruta_descarga:str,nombre_archivo:str,log:object):
+    try:
+
+        # obtenemos fecha
+        fecha_hoy=datetime.now().strftime("%Y-%m-%d")
+
+        ruta_consolidado=os.path.join(ruta_descarga,fecha_hoy)
+
+        # si la carpeta no exite se crea
+        if not os.path.exists(ruta_consolidado):
+            os.mkdir(ruta_consolidado)
+            log.info(f"carpeta creada exitosamente:{ruta_consolidado}")
+        
+        ruta_excel = os.path.join(ruta_consolidado,nombre_archivo)
+
+        # creamos el dataframe
+        df=pd.DataFrame(datos)
+
+        # exportamos a excel
+        df.to_excel(
+            ruta_excel,
+            index=False,
+            engine="openpyxl"
+        )
+
+        # validamos que el archivo existe
+        if os.path.exists(ruta_excel):
+            log.info(f"Excel generado correctamente")
+            return ruta_excel
+        
+        return None
+    except Exception as e:
+        log.error(f"Error generando Excel: {e}")
+        return None
+    
+    # generamos archvio zip con los consolidados de los puntos procesados
+# def generar_zip_consolidado(archivos_procesados:str,archivos_no_procesados:str, log:object):
 #     try:
-#         log.info(f"leyendo xml: {ruta_xml}")
+#         log.info("iniciando generacion de archivo zip consolidado")
+
+#         # validamos los parametros recibidos
+#         if not archivos_procesados:
+#             return None,"No se recibio la ruta del archivo procesado",False
+
+#         if not archivos_no_procesados:
+#             return None,"No se recibio la ruta del archivo procesado",False
         
-#         estructura_xml = ET.parse(ruta_xml)
-#         datos_xml = estructura_xml.getroot()
+#         # validar exitencia de los archivos excel
+#         if not os.path.exists(archivos_procesados):
+#             return None, f"No existe el archivo {archivos_procesados}", False
 
-#         valor = ""
-#         fecha = ""
+#         if not os.path.exists(archivos_no_procesados):
+#             return None, f"No existe el archivo {archivos_no_procesados}", False
 
-#         ns = {
-#             # busca etiquetas en el xml que tiene namespace(identificador unico para etiquetas)
-#             'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
-#         }
-
-#         # el find() sirve para buscar un solo elemento
-#         description = datos_xml.find('.//cbc:Description', ns)
-
-#         if description is not None and description.text:
-#             xml_interno = description.text.strip()
-
-#             root_interno = ET.fromstring(xml_interno)
+#         # obtenemos carpeta destino
+#         carpeta_destino= os.path.dirname(archivos_procesados)
+#         if not os.path.exists(carpeta_destino):
+#             return None, f"La carpeta no existe {carpeta_destino}", False
         
-#         # el findall() busca muchos elementos
-#         for note in root_interno.findall('.//cbc:Note', ns):
-#             texto = note.text
+#         # nombre del archvio zip
+#         fecha_actual=datetime.now().strftime("%Y%m%d")
 
-#             if texto and 'DAT39_ASEO' in texto:
-#                 valor = texto.split(":")[-1]
+#         nombre_zip = (
+#             f"consolidado_puntos_servicios_publicos{fecha_actual}.zip"
+#         )
 
-#             elif texto and 'FECH_VENC' in texto:
-#                 fecha = texto.split(":")[-1]
+#         ruta_zip = os.path.join(
+#             carpeta_destino,
+#             nombre_zip
+#         )
 
-#         return valor, fecha, None
+#         # creamos zip
+#         with zipfile.ZipFile(
+#             ruta_zip,
+#             mode="w",
+#             compression=zipfile.ZIP_DEFLATED
+#         ) as zipf:
+#             log.info(f"agregando archivo  procesados")
+#             zipf.write(archivos_procesados,arcname=os.path.basename(archivos_procesados))
 
-#     except ET.ParseError as e:
-#         log.error(f"El archivo no es un XML válido: {e}")
-#         return None, None, f"XML inválido: {e}"
+#             log.info(f"agregando archivo no procesados")
+#             zipf.write(archivos_no_procesados,arcname=os.path.basename(archivos_no_procesados))
 
+#         # validamos creacion del zip
+#         if not os.path.exists(ruta_zip):
+#             return (
+#                 None,
+#                 f"No se pudo generar el ZIP {ruta_zip}",
+#                 False
+#             )
+        
+#         log.info("generando archivo zip")
+#         return ruta_zip,"ZIP generado correctamente", True
 #     except Exception as e:
-#         log.error(f"Error inesperado al leer XML: {e}")
-#         return None, None, str(e)
+#         mensaje = (
+#             f"Error al generar el ZIP. "
+#             f"Detalle: {str(e)}")
+#         log.exception(mensaje)
+#         return None, mensaje, False
 
-# -----------------------------DESCARGA PDF RECIBO EMSA------------------------------------------------
