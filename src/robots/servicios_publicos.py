@@ -253,15 +253,15 @@ def main():
             })
 
         
-            # if resultado_descarte is None:
-            #     log.error(f"no se pudo descartar la factura{cod_cliente} en la grilla")
-            #     enviar_email(
-            #         destinatario=destinatarios,
-            #         asunto=f"ERROR{asunto}",
-            #         mensaje=f"no se pudo descartar la factura {cod_cliente} - {pdv} en la grilla.<br><br>",
-            #         titulo_mensaje=titulo_mensaje,
-            #         prioridad=1
-            #     )
+            if resultado_descarte is None:
+                log.error(f"no se pudo descartar la factura{cod_cliente} en la grilla")
+                # enviar_email(
+                #     destinatario=destinatarios,
+                #     asunto=f"ERROR{asunto}",
+                #     mensaje=f"no se pudo descartar la factura {cod_cliente} - {pdv} en la grilla.<br><br>",
+                #     titulo_mensaje=titulo_mensaje,
+                #     prioridad=1
+                # )
 
 
         # ULTIMA VALIDACION DE QUE EL PDF SE DESCARGO CORRECTAMENTE
