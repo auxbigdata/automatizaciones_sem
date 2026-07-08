@@ -23,6 +23,8 @@ destinatarios =[
     "auxsenadesarrollo@consuerte.com.co"
 ]
 
+destinatario_propio = ["auxanalista@consuerte.com.co"]
+
 asunto = f"{prefijo} EJECUCION PROCESO SERVICIOS PUBLICOS"
 titulo_mensaje = f"{prefijo} ROBOT SERVICIOS PUBLICOS"
 mensaje = "se notifica la ejecucion del proceso automatico de servicios publicos:<br><br>"
@@ -362,7 +364,7 @@ def main():
         return
     log.info("Enviando archivo de puntos no procesados")
     enviar_email(
-        destinatario=destinatarios,
+        destinatario=destinatario_propio,
         asunto=asunto,
         mensaje=f"Me permito adjuntar archivo Excel con los datos de los Códigos no consultados de la página de la EMSA.<br><br>",
         titulo_mensaje=titulo_mensaje,
@@ -378,7 +380,7 @@ def main():
     )
     log.info("Enviando archivo de puntos sin carpeta parametrizada")
     enviar_email(
-        destinatario=destinatarios,
+        destinatario=destinatario_propio,
         asunto=asunto,
         mensaje=f"Me permito adjuntar archivo Excel con los puntos sin carpeta parametrizada.<br><br>",
         titulo_mensaje=titulo_mensaje,
