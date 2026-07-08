@@ -20,7 +20,7 @@ else:
 
 destinatarios =[
     "auxanalista@consuerte.com.co",
-    "auxsenadesarrollo@consuerte.com.co"
+    "asistenteadm@consuerte.com.co"
 ]
 
 destinatario_propio = ["auxanalista@consuerte.com.co"]
