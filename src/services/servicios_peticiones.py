@@ -12,6 +12,8 @@ import re
 import urllib3
 import smbclient
 import zipfile
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 def iniciar_sesion(url: str, headers: dict, payload: dict, log: object):
     try:
@@ -381,18 +383,58 @@ def generar_excel_consolidado(datos:list, ruta_descarga:str,nombre_archivo:str,l
         # creamos el dataframe
         df=pd.DataFrame(datos)
 
+        # convertimos valor_pago a numerico para que en excel no quede como texto
+        if "valor_pago" in df.columns:
+            df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
+
         # exportamos a excel
-        df.to_excel(
-            ruta_excel,
-            index=False,
-            engine="openpyxl"
-        )
+        with pd.ExcelWriter(ruta_excel, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Consolidado")
+
+            hoja = writer.sheets["Consolidado"]
+
+            # estilos de encabezado
+            fuente_encabezado = Font(bold=True, color="FFFFFF")
+            relleno_encabezado = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            alineacion_centro = Alignment(horizontal="center", vertical="center")
+            borde_fino = Border(
+                left=Side(style="thin", color="B7B7B7"),
+                right=Side(style="thin", color="B7B7B7"),
+                top=Side(style="thin", color="B7B7B7"),
+                bottom=Side(style="thin", color="B7B7B7"),
+            )
+
+            columna_valor_pago = None
+            for idx, nombre_columna in enumerate(df.columns, start=1):
+                if nombre_columna == "valor_pago":
+                    columna_valor_pago = idx
+
+                celda_encabezado = hoja.cell(row=1, column=idx)
+                celda_encabezado.font = fuente_encabezado
+                celda_encabezado.fill = relleno_encabezado
+                celda_encabezado.alignment = alineacion_centro
+                celda_encabezado.border = borde_fino
+
+            # formato de las filas de datos y ancho de columnas
+            for idx, nombre_columna in enumerate(df.columns, start=1):
+                letra_columna = get_column_letter(idx)
+                ancho_maximo = max(
+                    [len(str(nombre_columna))] + [len(str(valor)) for valor in df[nombre_columna]]
+                )
+                hoja.column_dimensions[letra_columna].width = ancho_maximo + 4
+
+                for fila in range(2, len(df) + 2):
+                    celda = hoja.cell(row=fila, column=idx)
+                    celda.border = borde_fino
+                    celda.alignment = Alignment(horizontal="center", vertical="center")
+                    if idx == columna_valor_pago:
+                        celda.number_format = '"$" #,##0'
 
         # validamos que el archivo existe
         if os.path.exists(ruta_excel):
             log.info(f"Excel generado correctamente")
             return ruta_excel
-        
+
         return None
     except Exception as e:
         log.error(f"Error generando Excel: {e}")
