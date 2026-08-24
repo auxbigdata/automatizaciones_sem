@@ -6,6 +6,10 @@ class Entorno(BaseSettings):
     
     ENV: str
     URL_SGC: str
+    URL_SUPERFLEX: str
+    URL_SUPERFLEX_HOME: str
+    USER_SUPERFLEX: int
+    PASS_SUPERFLEX: int
     USER_COFREM: int
     PASS_COFREM: str
     URL_LOGIN_COFREM: str
