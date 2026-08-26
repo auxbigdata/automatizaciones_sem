@@ -216,6 +216,7 @@ def insercion_datos_papeleria(page, log, registro, ruta_capturas):
         # -> "VENTA LOTERIA"). Algunos registros quemados traen clasificacion vacía, en
         # ese caso se omite el campo.
         clasificacion = registro.get("clasificacion")
+        lista_subclasificaciones = None
         if clasificacion:
             texto_clasificacion = clasificacion.replace("_", " ")
             log.info(f"Se busca la clasificación '{clasificacion}' -> '{texto_clasificacion}'")
@@ -231,7 +232,17 @@ def insercion_datos_papeleria(page, log, registro, ruta_capturas):
 
             opcion_clasificacion = page.locator(f'li.p-dropdown-item:text-is("{texto_clasificacion}")').first
             opcion_clasificacion.wait_for(state='visible', timeout=10000)
-            opcion_clasificacion.evaluate("el => el.click()")
+
+            # se captura la lista de subclasificaciones que trae Superflex al seleccionar
+            # la Clasificación: hay nombres repetidos (ej. "SUPERCHANCE" con dos códigos
+            # distintos) y esta lista permite diferenciarlos más abajo.
+            try:
+                with page.expect_response(lambda r: "subclasificaciones/clasificacion" in r.url, timeout=10000) as respuesta_subclasificaciones:
+                    opcion_clasificacion.evaluate("el => el.click()")
+                lista_subclasificaciones = respuesta_subclasificaciones.value.json()
+            except PlaywrightTimeoutError:
+                log.warning("No llegó a tiempo la respuesta con la lista de subclasificaciones; si el registro pide una subclasificación con texto duplicado en la página, se podría seleccionar la incorrecta")
+
             log.info(f"Clasificación '{texto_clasificacion}' seleccionada correctamente")
         else:
             log.info("El registro no trae clasificación, se omite este campo")
@@ -239,8 +250,9 @@ def insercion_datos_papeleria(page, log, registro, ruta_capturas):
         # ---------- SUBCLASIFICACIÓN ----------
         # mismo tipo de dropdown con buscador. A veces el registro trae subclasificacion
         # vacía, en ese caso se salta. Cuando viene con un número al inicio (ej.
-        # "2049- SUPERCHANCE", "2802-SUPERCHANCE") ese número (y el guion/espacios que lo
-        # separan) se omiten y solo se busca el texto que sigue. Algunos registros traen
+        # "2049- SUPERCHANCE", "2802-SUPERCHANCE") ese número es el código real de la
+        # subclasificación en Superflex y el resto (guion/espacios incluidos) se descarta
+        # para armar el texto que se busca/escribe en el dropdown. Algunos registros traen
         # "_" en vez de espacio (ej. "CHANCE_DOBLE" -> "CHANCE DOBLE"), igual que en Clasificación.
         # CHANCE DOBLE es un caso especial: en la página la opción se llama "VENTA CHANCE DOBLE".
         subclasificacion = registro.get("subclasificacion")
@@ -249,6 +261,28 @@ def insercion_datos_papeleria(page, log, registro, ruta_capturas):
             if texto_subclasificacion == "CHANCE DOBLE":
                 texto_subclasificacion = "VENTA CHANCE DOBLE"
             log.info(f"Se busca la subclasificación '{subclasificacion}' -> '{texto_subclasificacion}'")
+
+            # con nombres repetidos (ej. dos "SUPERCHANCE"), se usa el código del registro
+            # para calcular qué posición del dropdown le corresponde (0 = primera). Si no
+            # se puede calcular, se usa 0 (comportamiento anterior).
+            indice_opcion = 0
+            match_codigo = re.match(r'^(\d+)', subclasificacion.strip())
+            if match_codigo and lista_subclasificaciones:
+                codigo_objetivo = match_codigo.group(1)
+                ocurrencias_previas = 0
+                encontrado = False
+                for item in lista_subclasificaciones:
+                    if item.get("descripcion") != texto_subclasificacion:
+                        continue
+                    if item.get("subClasificacion") == codigo_objetivo:
+                        indice_opcion = ocurrencias_previas
+                        encontrado = True
+                        break
+                    ocurrencias_previas += 1
+                if not encontrado:
+                    log.warning(f"El código '{codigo_objetivo}' no aparece en la lista de subclasificaciones de Superflex; se selecciona la primera opción visible con el texto '{texto_subclasificacion}'")
+                elif indice_opcion > 0:
+                    log.info(f"'{texto_subclasificacion}' está repetido en la página; se selecciona la opción #{indice_opcion + 1} (código {codigo_objetivo})")
 
             page_subclasificacion = page.locator('p-dropdown:has-text("--SELECCIONE--") div.p-dropdown-trigger[role="button"]').first
             page_subclasificacion.wait_for(state='visible', timeout=10000)
@@ -259,7 +293,7 @@ def insercion_datos_papeleria(page, log, registro, ruta_capturas):
             page.keyboard.type(texto_subclasificacion)
             page.wait_for_timeout(2000)
 
-            opcion_subclasificacion = page.locator(f'li.p-dropdown-item:text-is("{texto_subclasificacion}")').first
+            opcion_subclasificacion = page.locator(f'li.p-dropdown-item:text-is("{texto_subclasificacion}")').nth(indice_opcion)
             opcion_subclasificacion.wait_for(state='visible', timeout=10000)
             opcion_subclasificacion.evaluate("el => el.click()")
             log.info(f"Subclasificación '{texto_subclasificacion}' seleccionada correctamente")
