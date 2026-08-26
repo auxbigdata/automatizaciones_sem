@@ -9,7 +9,7 @@ class Entorno(BaseSettings):
     URL_SUPERFLEX: str
     URL_SUPERFLEX_HOME: str
     USER_SUPERFLEX: int
-    PASS_SUPERFLEX: int
+    PASS_SUPERFLEX: str
     USER_COFREM: int
     PASS_COFREM: str
     URL_LOGIN_COFREM: str
